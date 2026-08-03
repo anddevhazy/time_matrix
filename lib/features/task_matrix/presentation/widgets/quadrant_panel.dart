@@ -18,6 +18,7 @@ class QuadrantPanel extends StatelessWidget {
     required this.onTaskTap,
     required this.onToggleCompletion,
     required this.onDeleteTask,
+    this.shrinkWrap = false,
   });
 
   final Quadrant quadrant;
@@ -27,6 +28,10 @@ class QuadrantPanel extends StatelessWidget {
   final ValueChanged<TaskEntity> onTaskTap;
   final ValueChanged<String> onToggleCompletion;
   final ValueChanged<String> onDeleteTask;
+
+  /// When true, sizes to its content instead of filling available height —
+  /// for use inside a scrollable list rather than a fixed-height grid cell.
+  final bool shrinkWrap;
 
   @override
   Widget build(BuildContext context) {
@@ -45,33 +50,39 @@ class QuadrantPanel extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
             children: [
               _Header(quadrant: quadrant, count: tasks.length, onAddTask: onAddTask),
-              Expanded(
-                child: tasks.isEmpty
-                    ? EmptyState(
-                        icon: Icons.inbox_outlined,
-                        message: isHovering ? 'Drop to move here' : 'No tasks here yet',
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-                        itemCount: tasks.length,
-                        itemBuilder: (context, index) {
-                          final task = tasks[index];
-                          return TaskCard(
-                            task: task,
-                            onTap: () => onTaskTap(task),
-                            onToggleCompletion: () => onToggleCompletion(task.id),
-                            onDelete: () => onDeleteTask(task.id),
-                          );
-                        },
-                      ),
-              ),
+              _buildTaskList(isHovering),
             ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildTaskList(bool isHovering) {
+    final list = tasks.isEmpty
+        ? EmptyState(
+            icon: Icons.inbox_outlined,
+            message: isHovering ? 'Drop to move here' : 'No tasks here yet',
+          )
+        : ListView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            shrinkWrap: shrinkWrap,
+            physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              final task = tasks[index];
+              return TaskCard(
+                task: task,
+                onTap: () => onTaskTap(task),
+                onToggleCompletion: () => onToggleCompletion(task.id),
+                onDelete: () => onDeleteTask(task.id),
+              );
+            },
+          );
+    return shrinkWrap ? list : Expanded(child: list);
   }
 }
 
@@ -104,7 +115,13 @@ class _Header extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(quadrant.title, style: AppTextStyles.title),
+                    Flexible(
+                      child: Text(
+                        quadrant.title,
+                        style: AppTextStyles.title,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -119,7 +136,11 @@ class _Header extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text(quadrant.subtitle, style: AppTextStyles.subtitle),
+                Text(
+                  quadrant.subtitle,
+                  style: AppTextStyles.subtitle,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),

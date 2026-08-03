@@ -12,7 +12,7 @@ import '../widgets/quadrant_panel.dart';
 import '../widgets/quadrant_x.dart';
 import '../widgets/task_form_sheet.dart';
 
-enum MatrixView { grid, tabs }
+enum MatrixView { grid, list, tabs }
 
 class MatrixPage extends StatefulWidget {
   const MatrixPage({super.key});
@@ -74,6 +74,7 @@ class _MatrixPageState extends State<MatrixPage> {
                     TaskError(:final failure) => Center(child: Text(failure.message)),
                     TaskLoaded() => switch (_view) {
                         MatrixView.grid => _GridMatrix(state: state, onOpenForm: _openTaskForm),
+                        MatrixView.list => _ListMatrix(state: state, onOpenForm: _openTaskForm),
                         MatrixView.tabs => _TabsMatrix(state: state, onOpenForm: _openTaskForm),
                       },
                   },
@@ -184,6 +185,11 @@ class _ViewToggle extends StatelessWidget {
           label: Text('Grid', softWrap: false),
         ),
         ButtonSegment(
+          value: MatrixView.list,
+          icon: Icon(Icons.view_list_rounded, size: 18),
+          label: Text('List', softWrap: false),
+        ),
+        ButtonSegment(
           value: MatrixView.tabs,
           icon: Icon(Icons.view_carousel_outlined, size: 18),
           label: Text('Tabs', softWrap: false),
@@ -197,8 +203,9 @@ class _ViewToggle extends StatelessWidget {
 
 typedef _OpenForm = Future<void> Function({Quadrant? initialQuadrant, TaskEntity? existingTask});
 
-/// Always renders all four quadrants at once, regardless of screen size —
-/// two columns when there's room, one stacked (scrollable) column otherwise.
+/// Always renders all four quadrants in a fixed 2x2 grid that exactly fills
+/// the available space — no page-level scrolling at any screen size. Each
+/// panel's own task list scrolls internally instead.
 class _GridMatrix extends StatelessWidget {
   const _GridMatrix({required this.state, required this.onOpenForm});
 
@@ -208,31 +215,74 @@ class _GridMatrix extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<TaskCubit>();
+
+    Widget panel(Quadrant quadrant) => QuadrantPanel(
+          quadrant: quadrant,
+          tasks: state.tasksFor(quadrant),
+          onAcceptTask: (id) => cubit.moveTaskToQuadrant(id, quadrant),
+          onAddTask: () => onOpenForm(initialQuadrant: quadrant),
+          onTaskTap: (task) => onOpenForm(existingTask: task),
+          onToggleCompletion: cubit.toggleCompletion,
+          onDeleteTask: cubit.deleteTask,
+        );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final crossAxisCount = constraints.maxWidth >= 700 ? 2 : 1;
-          return GridView.count(
-            crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: crossAxisCount == 2 ? 1.4 : 1.1,
-            children: [
-              for (final quadrant in Quadrant.values)
-                QuadrantPanel(
-                  quadrant: quadrant,
-                  tasks: state.tasksFor(quadrant),
-                  onAcceptTask: (id) => cubit.moveTaskToQuadrant(id, quadrant),
-                  onAddTask: () => onOpenForm(initialQuadrant: quadrant),
-                  onTaskTap: (task) => onOpenForm(existingTask: task),
-                  onToggleCompletion: cubit.toggleCompletion,
-                  onDeleteTask: cubit.deleteTask,
-                ),
-            ],
-          );
-        },
+      child: Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: panel(Quadrant.doFirst)),
+                const SizedBox(width: 16),
+                Expanded(child: panel(Quadrant.schedule)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: panel(Quadrant.delegate)),
+                const SizedBox(width: 16),
+                Expanded(child: panel(Quadrant.eliminate)),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+/// A single scrollable list with all four quadrants stacked as sections —
+/// a denser, list-style alternative to the grid.
+class _ListMatrix extends StatelessWidget {
+  const _ListMatrix({required this.state, required this.onOpenForm});
+
+  final TaskLoaded state;
+  final _OpenForm onOpenForm;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<TaskCubit>();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      children: [
+        for (final quadrant in Quadrant.values) ...[
+          QuadrantPanel(
+            shrinkWrap: true,
+            quadrant: quadrant,
+            tasks: state.tasksFor(quadrant),
+            onAcceptTask: (id) => cubit.moveTaskToQuadrant(id, quadrant),
+            onAddTask: () => onOpenForm(initialQuadrant: quadrant),
+            onTaskTap: (task) => onOpenForm(existingTask: task),
+            onToggleCompletion: cubit.toggleCompletion,
+            onDeleteTask: cubit.deleteTask,
+          ),
+          if (quadrant != Quadrant.values.last) const SizedBox(height: 16),
+        ],
+      ],
     );
   }
 }
