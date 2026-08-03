@@ -29,7 +29,7 @@ class TaskCard extends StatelessWidget {
       onDelete: onDelete,
     );
 
-    return LongPressDraggable<String>(
+    return Draggable<String>(
       data: task.id,
       feedback: Material(
         color: Colors.transparent,

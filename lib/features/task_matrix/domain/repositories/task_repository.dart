@@ -4,7 +4,7 @@ import '../../../global/core/error/failures.dart';
 import '../entities/task_entity.dart';
 
 abstract class TaskRepository {
-  Future<Either<Failure, List<TaskEntity>>> getTasks();
+  Stream<Either<Failure, List<TaskEntity>>> watchTasks();
 
   Future<Either<Failure, Unit>> addTask(TaskEntity task);
 

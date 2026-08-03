@@ -1,0 +1,16 @@
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "time-matrix-48806",
+          "configurations": { "web": "1:452118091868:web:9b9442524866c44d396e99" }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

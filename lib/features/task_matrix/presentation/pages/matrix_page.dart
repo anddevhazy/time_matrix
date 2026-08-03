@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../global/constants/app_colors.dart';
 import '../../../global/constants/app_text_styles.dart';
 import '../../domain/entities/quadrant.dart';
@@ -11,7 +12,7 @@ import '../widgets/quadrant_panel.dart';
 import '../widgets/quadrant_x.dart';
 import '../widgets/task_form_sheet.dart';
 
-const _wideBreakpoint = 900.0;
+enum MatrixView { grid, tabs }
 
 class MatrixPage extends StatefulWidget {
   const MatrixPage({super.key});
@@ -21,10 +22,18 @@ class MatrixPage extends StatefulWidget {
 }
 
 class _MatrixPageState extends State<MatrixPage> {
+  MatrixView _view = MatrixView.grid;
+
   @override
   void initState() {
     super.initState();
     context.read<TaskCubit>().loadTasks();
+  }
+
+  @override
+  void dispose() {
+    context.read<TaskCubit>().stopWatching();
+    super.dispose();
   }
 
   Future<void> _openTaskForm({Quadrant? initialQuadrant, TaskEntity? existingTask}) async {
@@ -52,20 +61,21 @@ class _MatrixPageState extends State<MatrixPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _TopBar(state: state, onAddTask: () => _openTaskForm()),
+                _TopBar(
+                  state: state,
+                  view: _view,
+                  onViewChanged: (view) => setState(() => _view = view),
+                  onAddTask: () => _openTaskForm(),
+                ),
                 Expanded(
                   child: switch (state) {
                     TaskInitial() || TaskLoading() =>
                       const Center(child: CircularProgressIndicator()),
                     TaskError(:final failure) => Center(child: Text(failure.message)),
-                    TaskLoaded() => LayoutBuilder(
-                        builder: (context, constraints) {
-                          final isWide = constraints.maxWidth >= _wideBreakpoint;
-                          return isWide
-                              ? _WideMatrix(state: state, onOpenForm: _openTaskForm)
-                              : _NarrowMatrix(state: state, onOpenForm: _openTaskForm);
-                        },
-                      ),
+                    TaskLoaded() => switch (_view) {
+                        MatrixView.grid => _GridMatrix(state: state, onOpenForm: _openTaskForm),
+                        MatrixView.tabs => _TabsMatrix(state: state, onOpenForm: _openTaskForm),
+                      },
                   },
                 ),
               ],
@@ -78,9 +88,16 @@ class _MatrixPageState extends State<MatrixPage> {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.state, required this.onAddTask});
+  const _TopBar({
+    required this.state,
+    required this.view,
+    required this.onViewChanged,
+    required this.onAddTask,
+  });
 
   final TaskState state;
+  final MatrixView view;
+  final ValueChanged<MatrixView> onViewChanged;
   final VoidCallback onAddTask;
 
   @override
@@ -90,26 +107,49 @@ class _TopBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final title = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Time Matrix', style: AppTextStyles.displayLarge),
+                  Text(
+                    'Prioritize what matters using the Eisenhower method',
+                    style: AppTextStyles.subtitle,
+                  ),
+                ],
+              );
+              final actions = Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _ViewToggle(view: view, onChanged: onViewChanged),
+                  FilledButton.icon(
+                    onPressed: onAddTask,
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('New task'),
+                  ),
+                  IconButton(
+                    onPressed: () => context.read<AuthCubit>().signOut(),
+                    icon: const Icon(Icons.logout_rounded),
+                    tooltip: 'Sign out',
+                    color: AppColors.textSecondary,
+                  ),
+                ],
+              );
+
+              if (constraints.maxWidth < 560) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Time Matrix', style: AppTextStyles.displayLarge),
-                    Text(
-                      'Prioritize what matters using the Eisenhower method',
-                      style: AppTextStyles.subtitle,
-                    ),
-                  ],
-                ),
-              ),
-              FilledButton.icon(
-                onPressed: onAddTask,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('New task'),
-              ),
-            ],
+                  children: [title, const SizedBox(height: 12), actions],
+                );
+              }
+              return Row(
+                children: [Expanded(child: title), const SizedBox(width: 12), actions],
+              );
+            },
           ),
           if (state is TaskLoaded) ...[
             const SizedBox(height: 16),
@@ -123,10 +163,44 @@ class _TopBar extends StatelessWidget {
   }
 }
 
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.view, required this.onChanged});
+
+  final MatrixView view;
+  final ValueChanged<MatrixView> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<MatrixView>(
+      showSelectedIcon: false,
+      style: const ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      segments: const [
+        ButtonSegment(
+          value: MatrixView.grid,
+          icon: Icon(Icons.grid_view_rounded, size: 18),
+          label: Text('Grid', softWrap: false),
+        ),
+        ButtonSegment(
+          value: MatrixView.tabs,
+          icon: Icon(Icons.view_carousel_outlined, size: 18),
+          label: Text('Tabs', softWrap: false),
+        ),
+      ],
+      selected: {view},
+      onSelectionChanged: (s) => onChanged(s.first),
+    );
+  }
+}
+
 typedef _OpenForm = Future<void> Function({Quadrant? initialQuadrant, TaskEntity? existingTask});
 
-class _WideMatrix extends StatelessWidget {
-  const _WideMatrix({required this.state, required this.onOpenForm});
+/// Always renders all four quadrants at once, regardless of screen size —
+/// two columns when there's room, one stacked (scrollable) column otherwise.
+class _GridMatrix extends StatelessWidget {
+  const _GridMatrix({required this.state, required this.onOpenForm});
 
   final TaskLoaded state;
   final _OpenForm onOpenForm;
@@ -136,39 +210,45 @@ class _WideMatrix extends StatelessWidget {
     final cubit = context.read<TaskCubit>();
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: GridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1.4,
-        children: [
-          for (final quadrant in Quadrant.values)
-            QuadrantPanel(
-              quadrant: quadrant,
-              tasks: state.tasksFor(quadrant),
-              onAcceptTask: (id) => cubit.moveTaskToQuadrant(id, quadrant),
-              onAddTask: () => onOpenForm(initialQuadrant: quadrant),
-              onTaskTap: (task) => onOpenForm(existingTask: task),
-              onToggleCompletion: cubit.toggleCompletion,
-              onDeleteTask: cubit.deleteTask,
-            ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = constraints.maxWidth >= 700 ? 2 : 1;
+          return GridView.count(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: crossAxisCount == 2 ? 1.4 : 1.1,
+            children: [
+              for (final quadrant in Quadrant.values)
+                QuadrantPanel(
+                  quadrant: quadrant,
+                  tasks: state.tasksFor(quadrant),
+                  onAcceptTask: (id) => cubit.moveTaskToQuadrant(id, quadrant),
+                  onAddTask: () => onOpenForm(initialQuadrant: quadrant),
+                  onTaskTap: (task) => onOpenForm(existingTask: task),
+                  onToggleCompletion: cubit.toggleCompletion,
+                  onDeleteTask: cubit.deleteTask,
+                ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class _NarrowMatrix extends StatefulWidget {
-  const _NarrowMatrix({required this.state, required this.onOpenForm});
+/// Navigates one quadrant at a time via a tab bar — available at any screen size.
+class _TabsMatrix extends StatefulWidget {
+  const _TabsMatrix({required this.state, required this.onOpenForm});
 
   final TaskLoaded state;
   final _OpenForm onOpenForm;
 
   @override
-  State<_NarrowMatrix> createState() => _NarrowMatrixState();
+  State<_TabsMatrix> createState() => _TabsMatrixState();
 }
 
-class _NarrowMatrixState extends State<_NarrowMatrix> with SingleTickerProviderStateMixin {
+class _TabsMatrixState extends State<_TabsMatrix> with SingleTickerProviderStateMixin {
   late final _tabController = TabController(length: Quadrant.values.length, vsync: this);
 
   @override

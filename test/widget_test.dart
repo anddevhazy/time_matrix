@@ -1,26 +1,52 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:time_matrix/main_common.dart';
-import 'package:time_matrix/main_injection_container.dart' as di;
+import 'package:time_matrix/features/auth/domain/entities/app_user.dart';
+import 'package:time_matrix/features/auth/domain/repositories/auth_repository.dart';
+import 'package:time_matrix/features/auth/domain/usecases/sign_in_with_google_usecase.dart';
+import 'package:time_matrix/features/auth/domain/usecases/sign_out_usecase.dart';
+import 'package:time_matrix/features/auth/domain/usecases/watch_auth_state_usecase.dart';
+import 'package:time_matrix/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:time_matrix/features/auth/presentation/pages/sign_in_page.dart';
+import 'package:time_matrix/features/global/core/error/failures.dart';
+
+/// A fake repository stands in for Firebase here — VM widget tests can't
+/// run the Firebase JS SDK, and this keeps the test focused on the widget
+/// reacting to auth state rather than exercising real Firebase Auth.
+class _FakeAuthRepository implements AuthRepository {
+  @override
+  Stream<AppUser?> authStateChanges() => Stream.value(null);
+
+  @override
+  Future<Either<Failure, AppUser>> signInWithGoogle() async =>
+      const Right(AppUser(uid: 'test-uid'));
+
+  @override
+  Future<Either<Failure, Unit>> signOut() async => const Right(unit);
+}
 
 void main() {
-  testWidgets('Matrix page renders the four quadrants', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await di.init();
+  testWidgets('Sign-in page prompts for Google sign-in when unauthenticated', (
+    WidgetTester tester,
+  ) async {
+    final repository = _FakeAuthRepository();
+    final cubit = AuthCubit(
+      watchAuthStateUsecase: WatchAuthStateUsecase(repository),
+      signInWithGoogleUsecase: SignInWithGoogleUsecase(repository),
+      signOutUsecase: SignOutUsecase(repository),
+    );
+    addTearDown(cubit.close);
 
-    tester.view.physicalSize = const Size(1400, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
-    await tester.pumpWidget(const TimeMatrixApp());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider.value(value: cubit, child: const SignInPage()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Time Matrix'), findsOneWidget);
-    expect(find.text('Do First'), findsOneWidget);
-    expect(find.text('Schedule'), findsOneWidget);
-    expect(find.text('Delegate'), findsOneWidget);
-    expect(find.text('Eliminate'), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsOneWidget);
   });
 }

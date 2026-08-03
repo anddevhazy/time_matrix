@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 
-import '../../task_matrix/presentation/pages/matrix_page.dart';
+import '../../auth/presentation/widgets/auth_gate.dart';
 
 class Routes {
   const Routes._();
@@ -14,7 +14,7 @@ class Routes {
       GoRoute(
         path: matrixPath,
         name: matrixName,
-        builder: (context, state) => const MatrixPage(),
+        builder: (context, state) => const AuthGate(),
       ),
     ],
   );
