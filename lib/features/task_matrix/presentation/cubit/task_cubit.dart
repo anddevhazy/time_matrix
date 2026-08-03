@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../global/core/error/failures.dart';
 import '../../domain/entities/quadrant.dart';
 import '../../domain/entities/task_entity.dart';
-import '../../domain/entities/task_priority.dart';
 import '../../domain/usecases/add_task_usecase.dart';
 import '../../domain/usecases/delete_task_usecase.dart';
 import '../../domain/usecases/get_tasks_usecase.dart';
@@ -95,11 +94,5 @@ class TaskCubit extends Cubit<TaskState> {
     final current = state;
     if (current is! TaskLoaded) return;
     emit(current.copyWith(searchQuery: query));
-  }
-
-  void filterByPriority(TaskPriority? priority) {
-    final current = state;
-    if (current is! TaskLoaded) return;
-    emit(current.copyWith(priorityFilter: priority, clearPriorityFilter: priority == null));
   }
 }

@@ -6,7 +6,6 @@ import '../../../global/constants/app_colors.dart';
 import '../../../global/constants/app_text_styles.dart';
 import '../../domain/entities/quadrant.dart';
 import '../../domain/entities/task_entity.dart';
-import '../../domain/entities/task_priority.dart';
 import 'quadrant_x.dart';
 
 /// Opens the add/edit task form as a responsive modal sheet:
@@ -62,7 +61,6 @@ class _TaskFormContentState extends State<_TaskFormContent> {
 
   late Quadrant _quadrant =
       widget.existingTask?.quadrant ?? widget.initialQuadrant ?? Quadrant.doFirst;
-  late TaskPriority _priority = widget.existingTask?.priority ?? TaskPriority.medium;
   late DateTime? _dueDate = widget.existingTask?.dueDate;
 
   bool get _isEditing => widget.existingTask != null;
@@ -95,7 +93,6 @@ class _TaskFormContentState extends State<_TaskFormContent> {
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       quadrant: _quadrant,
-      priority: _priority,
       dueDate: _dueDate,
       clearDueDate: _dueDate == null,
       tags: tags,
@@ -170,17 +167,6 @@ class _TaskFormContentState extends State<_TaskFormContent> {
                       onSelected: (_) => setState(() => _quadrant = q),
                     ),
                 ],
-              ),
-              const SizedBox(height: 16),
-              Text('Priority', style: AppTextStyles.subtitle),
-              const SizedBox(height: 8),
-              SegmentedButton<TaskPriority>(
-                segments: [
-                  for (final p in TaskPriority.values)
-                    ButtonSegment(value: p, label: Text(p.label)),
-                ],
-                selected: {_priority},
-                onSelectionChanged: (s) => setState(() => _priority = s.first),
               ),
               const SizedBox(height: 16),
               Text('Due date', style: AppTextStyles.subtitle),

@@ -19,21 +19,17 @@ class TaskLoaded extends TaskState {
   const TaskLoaded({
     required this.tasks,
     this.searchQuery = '',
-    this.priorityFilter,
   });
 
   final List<TaskEntity> tasks;
   final String searchQuery;
-  final TaskPriority? priorityFilter;
 
-  /// Tasks after search/filter has been applied, still unsorted-by-quadrant.
+  /// Tasks after the search query has been applied, still unsorted-by-quadrant.
   List<TaskEntity> get visibleTasks {
+    if (searchQuery.isEmpty) return tasks;
     return tasks.where((task) {
-      final matchesQuery = searchQuery.isEmpty ||
-          task.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+      return task.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
           task.tags.any((t) => t.toLowerCase().contains(searchQuery.toLowerCase()));
-      final matchesPriority = priorityFilter == null || task.priority == priorityFilter;
-      return matchesQuery && matchesPriority;
     }).toList();
   }
 
@@ -54,18 +50,15 @@ class TaskLoaded extends TaskState {
   TaskLoaded copyWith({
     List<TaskEntity>? tasks,
     String? searchQuery,
-    TaskPriority? priorityFilter,
-    bool clearPriorityFilter = false,
   }) {
     return TaskLoaded(
       tasks: tasks ?? this.tasks,
       searchQuery: searchQuery ?? this.searchQuery,
-      priorityFilter: clearPriorityFilter ? null : (priorityFilter ?? this.priorityFilter),
     );
   }
 
   @override
-  List<Object?> get props => [tasks, searchQuery, priorityFilter];
+  List<Object?> get props => [tasks, searchQuery];
 }
 
 class TaskError extends TaskState {

@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../../../global/constants/app_colors.dart';
 import '../../../global/constants/app_text_styles.dart';
 import '../../domain/entities/task_entity.dart';
-import '../../domain/entities/task_priority.dart';
 import 'quadrant_x.dart';
 
 class TaskCard extends StatelessWidget {
@@ -54,17 +53,6 @@ class _CardBody extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onToggleCompletion;
   final VoidCallback onDelete;
-
-  Color get _priorityColor {
-    switch (task.priority) {
-      case TaskPriority.high:
-        return AppColors.doFirst;
-      case TaskPriority.medium:
-        return AppColors.delegate;
-      case TaskPriority.low:
-        return AppColors.schedule;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,12 +112,6 @@ class _CardBody extends StatelessWidget {
                           runSpacing: 4,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration:
-                                  BoxDecoration(color: _priorityColor, shape: BoxShape.circle),
-                            ),
                             if (task.dueDate != null)
                               Text(
                                 DateFormat.MMMd().format(task.dueDate!),

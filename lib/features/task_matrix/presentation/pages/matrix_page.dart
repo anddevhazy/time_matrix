@@ -114,9 +114,7 @@ class _TopBar extends StatelessWidget {
           if (state is TaskLoaded) ...[
             const SizedBox(height: 16),
             FilterBar(
-              priorityFilter: (state as TaskLoaded).priorityFilter,
               onSearchChanged: context.read<TaskCubit>().search,
-              onPriorityChanged: context.read<TaskCubit>().filterByPriority,
             ),
           ],
         ],

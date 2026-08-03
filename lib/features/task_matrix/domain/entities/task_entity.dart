@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 import 'quadrant.dart';
-import 'task_priority.dart';
 
 class TaskEntity extends Equatable {
   const TaskEntity({
@@ -9,7 +8,6 @@ class TaskEntity extends Equatable {
     required this.title,
     required this.quadrant,
     this.description = '',
-    this.priority = TaskPriority.medium,
     this.dueDate,
     this.tags = const [],
     this.isCompleted = false,
@@ -20,7 +18,6 @@ class TaskEntity extends Equatable {
   final String title;
   final String description;
   final Quadrant quadrant;
-  final TaskPriority priority;
   final DateTime? dueDate;
   final List<String> tags;
   final bool isCompleted;
@@ -34,7 +31,6 @@ class TaskEntity extends Equatable {
     String? title,
     String? description,
     Quadrant? quadrant,
-    TaskPriority? priority,
     DateTime? dueDate,
     bool clearDueDate = false,
     List<String>? tags,
@@ -46,7 +42,6 @@ class TaskEntity extends Equatable {
       title: title ?? this.title,
       description: description ?? this.description,
       quadrant: quadrant ?? this.quadrant,
-      priority: priority ?? this.priority,
       dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
       tags: tags ?? this.tags,
       isCompleted: isCompleted ?? this.isCompleted,
@@ -60,7 +55,6 @@ class TaskEntity extends Equatable {
         title,
         description,
         quadrant,
-        priority,
         dueDate,
         tags,
         isCompleted,
