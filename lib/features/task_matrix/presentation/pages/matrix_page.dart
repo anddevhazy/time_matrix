@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../global/constants/app_colors.dart';
 import '../../../global/constants/app_text_styles.dart';
+import '../../../mind_dump/presentation/cubit/dump_cubit.dart';
+import '../../../mind_dump/presentation/pages/mind_dump_view.dart';
 import '../../domain/entities/quadrant.dart';
 import '../../domain/entities/task_entity.dart';
 import '../cubit/task_cubit.dart';
@@ -12,7 +14,7 @@ import '../widgets/quadrant_panel.dart';
 import '../widgets/quadrant_x.dart';
 import '../widgets/task_form_sheet.dart';
 
-enum MatrixView { grid, list, tabs }
+enum MatrixView { grid, list, tabs, dump }
 
 class MatrixPage extends StatefulWidget {
   const MatrixPage({super.key});
@@ -28,11 +30,13 @@ class _MatrixPageState extends State<MatrixPage> {
   void initState() {
     super.initState();
     context.read<TaskCubit>().loadTasks();
+    context.read<DumpCubit>().loadEntries();
   }
 
   @override
   void dispose() {
     context.read<TaskCubit>().stopWatching();
+    context.read<DumpCubit>().stopWatching();
     super.dispose();
   }
 
@@ -68,16 +72,22 @@ class _MatrixPageState extends State<MatrixPage> {
                   onAddTask: () => _openTaskForm(),
                 ),
                 Expanded(
-                  child: switch (state) {
-                    TaskInitial() || TaskLoading() =>
-                      const Center(child: CircularProgressIndicator()),
-                    TaskError(:final failure) => Center(child: Text(failure.message)),
-                    TaskLoaded() => switch (_view) {
-                        MatrixView.grid => _GridMatrix(state: state, onOpenForm: _openTaskForm),
-                        MatrixView.list => _ListMatrix(state: state, onOpenForm: _openTaskForm),
-                        MatrixView.tabs => _TabsMatrix(state: state, onOpenForm: _openTaskForm),
-                      },
-                  },
+                  child: _view == MatrixView.dump
+                      ? const MindDumpView()
+                      : switch (state) {
+                          TaskInitial() || TaskLoading() =>
+                            const Center(child: CircularProgressIndicator()),
+                          TaskError(:final failure) => Center(child: Text(failure.message)),
+                          TaskLoaded() => switch (_view) {
+                              MatrixView.grid =>
+                                _GridMatrix(state: state, onOpenForm: _openTaskForm),
+                              MatrixView.list =>
+                                _ListMatrix(state: state, onOpenForm: _openTaskForm),
+                              MatrixView.tabs =>
+                                _TabsMatrix(state: state, onOpenForm: _openTaskForm),
+                              MatrixView.dump => const MindDumpView(),
+                            },
+                        },
                 ),
               ],
             );
@@ -152,7 +162,7 @@ class _TopBar extends StatelessWidget {
               );
             },
           ),
-          if (state is TaskLoaded) ...[
+          if (state is TaskLoaded && view != MatrixView.dump) ...[
             const SizedBox(height: 16),
             FilterBar(
               onSearchChanged: context.read<TaskCubit>().search,
@@ -193,6 +203,11 @@ class _ViewToggle extends StatelessWidget {
           value: MatrixView.tabs,
           icon: Icon(Icons.view_carousel_outlined, size: 18),
           label: Text('Tabs', softWrap: false),
+        ),
+        ButtonSegment(
+          value: MatrixView.dump,
+          icon: Icon(Icons.psychology_alt_outlined, size: 18),
+          label: Text('Dump', softWrap: false),
         ),
       ],
       selected: {view},

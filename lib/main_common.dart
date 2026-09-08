@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/global/constants/app_theme.dart';
 import 'features/global/routes/routes.dart';
+import 'features/mind_dump/presentation/cubit/dump_cubit.dart';
 import 'features/task_matrix/presentation/cubit/task_cubit.dart';
 import 'firebase_options.dart';
 import 'main_injection_container.dart' as di;
@@ -26,6 +27,7 @@ class TimeMatrixApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => sl<AuthCubit>()),
         BlocProvider(create: (_) => sl<TaskCubit>()),
+        BlocProvider(create: (_) => sl<DumpCubit>()),
       ],
       child: MaterialApp.router(
         title: 'Time Matrix',

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'features/auth/auth_injection_container.dart';
+import 'features/mind_dump/mind_dump_injection_container.dart';
 import 'features/task_matrix/task_matrix_injection_container.dart';
 import 'service_locator.dart';
 
@@ -11,4 +12,5 @@ Future<void> init() async {
 
   await authInjectionContainer();
   await taskMatrixInjectionContainer();
+  await mindDumpInjectionContainer();
 }
