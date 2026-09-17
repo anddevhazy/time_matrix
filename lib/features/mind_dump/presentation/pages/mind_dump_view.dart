@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../global/components/drag_handle.dart';
 import '../../../global/components/empty_state.dart';
 import '../../../global/constants/app_colors.dart';
 import '../../../global/constants/app_text_styles.dart';
@@ -138,12 +139,17 @@ class _DumpList extends StatelessWidget {
                   icon: Icons.cloud_outlined,
                   message: 'Nothing dumped yet — start typing above.',
                 )
-              : ListView.builder(
+              : ReorderableListView.builder(
+                  buildDefaultDragHandles: false,
+                  proxyDecorator: reorderProxyDecorator,
+                  onReorder: cubit.reorderEntry,
                   itemCount: entries.length,
                   itemBuilder: (context, index) {
                     final entry = entries[index];
                     return DumpEntryRow(
+                      key: ValueKey(entry.id),
                       entry: entry,
+                      dragHandle: DragHandle(index: index, enabled: !state.isSaving),
                       selected: state.assignments[entry.id],
                       enabled: !state.isSaving,
                       onSelected: (quadrant) => cubit.assign(entry.id, quadrant),

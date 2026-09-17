@@ -13,12 +13,16 @@ class TaskCard extends StatelessWidget {
     required this.onTap,
     required this.onToggleCompletion,
     required this.onDelete,
+    this.dragHandle,
   });
 
   final TaskEntity task;
   final VoidCallback onTap;
   final VoidCallback onToggleCompletion;
   final VoidCallback onDelete;
+
+  /// Shown at the leading edge when the card sits in a reorderable list.
+  final Widget? dragHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +31,7 @@ class TaskCard extends StatelessWidget {
       onTap: onTap,
       onToggleCompletion: onToggleCompletion,
       onDelete: onDelete,
+      dragHandle: dragHandle,
     );
 
     return Draggable<String>(
@@ -47,12 +52,14 @@ class _CardBody extends StatelessWidget {
     required this.onTap,
     required this.onToggleCompletion,
     required this.onDelete,
+    required this.dragHandle,
   });
 
   final TaskEntity task;
   final VoidCallback onTap;
   final VoidCallback onToggleCompletion;
   final VoidCallback onDelete;
+  final Widget? dragHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -73,10 +80,11 @@ class _CardBody extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 6, 10),
+            padding: EdgeInsets.fromLTRB(dragHandle == null ? 10 : 4, 10, 6, 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (dragHandle != null) ...[dragHandle!, const SizedBox(width: 4)],
                 InkWell(
                   customBorder: const CircleBorder(),
                   onTap: onToggleCompletion,

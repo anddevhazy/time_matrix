@@ -6,4 +6,6 @@ abstract class DumpRemoteDataSource {
   Future<void> addEntry(DumpEntryModel entry);
 
   Future<void> deleteEntries(List<String> ids);
+
+  Future<void> reorderEntries(List<String> orderedIds);
 }

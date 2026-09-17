@@ -11,4 +11,6 @@ abstract class TaskRepository {
   Future<Either<Failure, Unit>> updateTask(TaskEntity task);
 
   Future<Either<Failure, Unit>> deleteTask(String id);
+
+  Future<Either<Failure, Unit>> reorderTasks(List<String> orderedIds);
 }

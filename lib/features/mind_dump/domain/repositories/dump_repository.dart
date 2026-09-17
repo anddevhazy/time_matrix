@@ -9,4 +9,6 @@ abstract class DumpRepository {
   Future<Either<Failure, Unit>> addEntry(DumpEntry entry);
 
   Future<Either<Failure, Unit>> deleteEntries(List<String> ids);
+
+  Future<Either<Failure, Unit>> reorderEntries(List<String> orderedIds);
 }

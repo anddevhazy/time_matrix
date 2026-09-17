@@ -5,6 +5,7 @@ import 'data/repository/task_repository_impl.dart';
 import 'domain/repositories/task_repository.dart';
 import 'domain/usecases/add_task_usecase.dart';
 import 'domain/usecases/delete_task_usecase.dart';
+import 'domain/usecases/reorder_tasks_usecase.dart';
 import 'domain/usecases/update_task_usecase.dart';
 import 'domain/usecases/watch_tasks_usecase.dart';
 import 'presentation/cubit/task_cubit.dart';
@@ -16,6 +17,7 @@ Future<void> taskMatrixInjectionContainer() async {
       addTaskUsecase: sl(),
       updateTaskUsecase: sl(),
       deleteTaskUsecase: sl(),
+      reorderTasksUsecase: sl(),
     ),
   );
 
@@ -23,6 +25,7 @@ Future<void> taskMatrixInjectionContainer() async {
   sl.registerLazySingleton(() => AddTaskUsecase(sl()));
   sl.registerLazySingleton(() => UpdateTaskUsecase(sl()));
   sl.registerLazySingleton(() => DeleteTaskUsecase(sl()));
+  sl.registerLazySingleton(() => ReorderTasksUsecase(sl()));
 
   sl.registerLazySingleton<TaskRepository>(() => TaskRepositoryImpl(sl()));
 

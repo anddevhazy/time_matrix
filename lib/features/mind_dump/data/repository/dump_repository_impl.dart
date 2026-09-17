@@ -42,4 +42,14 @@ class DumpRepositoryImpl implements DumpRepository {
       return Left(FailureMapper.fromException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> reorderEntries(List<String> orderedIds) async {
+    try {
+      await _remoteDataSource.reorderEntries(orderedIds);
+      return const Right(unit);
+    } catch (e) {
+      return Left(FailureMapper.fromException(e));
+    }
+  }
 }

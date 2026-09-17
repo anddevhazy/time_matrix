@@ -52,4 +52,14 @@ class TaskRepositoryImpl implements TaskRepository {
       return Left(FailureMapper.fromException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> reorderTasks(List<String> orderedIds) async {
+    try {
+      await _remoteDataSource.reorderTasks(orderedIds);
+      return const Right(unit);
+    } catch (e) {
+      return Left(FailureMapper.fromException(e));
+    }
+  }
 }

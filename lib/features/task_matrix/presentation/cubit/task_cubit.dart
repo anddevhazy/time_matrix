@@ -9,6 +9,7 @@ import '../../domain/entities/quadrant.dart';
 import '../../domain/entities/task_entity.dart';
 import '../../domain/usecases/add_task_usecase.dart';
 import '../../domain/usecases/delete_task_usecase.dart';
+import '../../domain/usecases/reorder_tasks_usecase.dart';
 import '../../domain/usecases/update_task_usecase.dart';
 import '../../domain/usecases/watch_tasks_usecase.dart';
 
@@ -20,16 +21,19 @@ class TaskCubit extends Cubit<TaskState> {
     required AddTaskUsecase addTaskUsecase,
     required UpdateTaskUsecase updateTaskUsecase,
     required DeleteTaskUsecase deleteTaskUsecase,
+    required ReorderTasksUsecase reorderTasksUsecase,
   })  : _watchTasksUsecase = watchTasksUsecase,
         _addTaskUsecase = addTaskUsecase,
         _updateTaskUsecase = updateTaskUsecase,
         _deleteTaskUsecase = deleteTaskUsecase,
+        _reorderTasksUsecase = reorderTasksUsecase,
         super(const TaskInitial());
 
   final WatchTasksUsecase _watchTasksUsecase;
   final AddTaskUsecase _addTaskUsecase;
   final UpdateTaskUsecase _updateTaskUsecase;
   final DeleteTaskUsecase _deleteTaskUsecase;
+  final ReorderTasksUsecase _reorderTasksUsecase;
 
   StreamSubscription<Either<Failure, List<TaskEntity>>>? _subscription;
 
@@ -74,7 +78,53 @@ class TaskCubit extends Cubit<TaskState> {
     if (current is! TaskLoaded) return;
     final task = current.tasks.where((t) => t.id == taskId).firstOrNull;
     if (task == null || task.quadrant == quadrant) return;
-    await updateTask(task.copyWith(quadrant: quadrant));
+    // A fresh timestamp outranks every reordered index, so it joins at the bottom.
+    await updateTask(
+      task.copyWith(quadrant: quadrant, sortOrder: DateTime.now().millisecondsSinceEpoch),
+    );
+  }
+
+  /// Handles a drop from [ReorderableListView] in [quadrant]'s visible list.
+  /// While searching, that list is a subset, so the reordered tasks are put
+  /// back into the positions they held in the full quadrant — hidden tasks
+  /// don't move. The new order shows immediately and is then saved.
+  Future<void> reorderTask(Quadrant quadrant, int oldIndex, int newIndex) async {
+    final current = state;
+    if (current is! TaskLoaded) return;
+    final visible = current.tasksFor(quadrant);
+    if (oldIndex < 0 || oldIndex >= visible.length) return;
+    // The index is reported as if the dragged task were still in the list.
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex == oldIndex) return;
+
+    final reordered = [...visible];
+    reordered.insert(newIndex, reordered.removeAt(oldIndex));
+
+    final visibleIds = visible.map((t) => t.id).toSet();
+    final nextVisible = reordered.iterator;
+    final orderedIds = [
+      for (final task in current.allTasksFor(quadrant))
+        if (visibleIds.contains(task.id) && nextVisible.moveNext())
+          nextVisible.current.id
+        else
+          task.id,
+    ];
+
+    final positions = {for (var i = 0; i < orderedIds.length; i++) orderedIds[i]: i};
+    emit(
+      current.copyWith(
+        tasks: [
+          for (final task in current.tasks)
+            if (positions[task.id] case final position?)
+              task.copyWith(sortOrder: position)
+            else
+              task,
+        ],
+      ),
+    );
+
+    final result = await _reorderTasksUsecase(orderedIds);
+    result.fold((failure) => emit(TaskError(failure)), (_) {});
   }
 
   Future<void> toggleCompletion(String taskId) async {

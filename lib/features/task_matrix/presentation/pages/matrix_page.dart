@@ -239,6 +239,7 @@ class _GridMatrix extends StatelessWidget {
           onTaskTap: (task) => onOpenForm(existingTask: task),
           onToggleCompletion: cubit.toggleCompletion,
           onDeleteTask: cubit.deleteTask,
+          onReorder: (oldIndex, newIndex) => cubit.reorderTask(quadrant, oldIndex, newIndex),
         );
 
     return Padding(
@@ -294,6 +295,7 @@ class _ListMatrix extends StatelessWidget {
             onTaskTap: (task) => onOpenForm(existingTask: task),
             onToggleCompletion: cubit.toggleCompletion,
             onDeleteTask: cubit.deleteTask,
+            onReorder: (oldIndex, newIndex) => cubit.reorderTask(quadrant, oldIndex, newIndex),
           ),
           if (quadrant != Quadrant.values.last) const SizedBox(height: 16),
         ],
@@ -363,6 +365,8 @@ class _TabsMatrixState extends State<_TabsMatrix> with SingleTickerProviderState
                     onTaskTap: (task) => widget.onOpenForm(existingTask: task),
                     onToggleCompletion: cubit.toggleCompletion,
                     onDeleteTask: cubit.deleteTask,
+                    onReorder: (oldIndex, newIndex) =>
+                        cubit.reorderTask(quadrant, oldIndex, newIndex),
                   ),
                 ),
             ],

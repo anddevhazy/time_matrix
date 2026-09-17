@@ -33,4 +33,16 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
 
   @override
   Future<void> deleteTask(String id) => _tasksCollection.doc(id).delete();
+
+  /// Writes every position in one batch so another device never observes a
+  /// half-applied order. Uses `update` so only `sortOrder` is touched.
+  @override
+  Future<void> reorderTasks(List<String> orderedIds) {
+    if (orderedIds.isEmpty) return Future.value();
+    final batch = _firestore.batch();
+    for (var i = 0; i < orderedIds.length; i++) {
+      batch.update(_tasksCollection.doc(orderedIds[i]), {'sortOrder': i});
+    }
+    return batch.commit();
+  }
 }

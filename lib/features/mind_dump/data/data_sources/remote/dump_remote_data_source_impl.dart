@@ -41,4 +41,15 @@ class DumpRemoteDataSourceImpl implements DumpRemoteDataSource {
     }
     return batch.commit();
   }
+
+  /// Same batching as [deleteEntries]; `update` touches only `sortOrder`.
+  @override
+  Future<void> reorderEntries(List<String> orderedIds) {
+    if (orderedIds.isEmpty) return Future.value();
+    final batch = _firestore.batch();
+    for (var i = 0; i < orderedIds.length; i++) {
+      batch.update(_inboxCollection.doc(orderedIds[i]), {'sortOrder': i});
+    }
+    return batch.commit();
+  }
 }

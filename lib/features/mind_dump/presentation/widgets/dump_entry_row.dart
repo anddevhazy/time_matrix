@@ -14,6 +14,7 @@ class DumpEntryRow extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     required this.onDiscard,
+    required this.dragHandle,
     this.enabled = true,
   });
 
@@ -21,6 +22,7 @@ class DumpEntryRow extends StatelessWidget {
   final Quadrant? selected;
   final ValueChanged<Quadrant> onSelected;
   final VoidCallback onDiscard;
+  final Widget dragHandle;
   final bool enabled;
 
   @override
@@ -29,7 +31,7 @@ class DumpEntryRow extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+      padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -63,16 +65,23 @@ class DumpEntryRow extends StatelessWidget {
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [Expanded(child: text), discard],
+                  children: [
+                    dragHandle,
+                    const SizedBox(width: 6),
+                    Expanded(child: text),
+                    discard,
+                  ],
                 ),
                 const SizedBox(height: 8),
-                picker,
+                Padding(padding: const EdgeInsets.only(left: 30), child: picker),
               ],
             );
           }
 
           return Row(
             children: [
+              dragHandle,
+              const SizedBox(width: 6),
               Expanded(child: text),
               const SizedBox(width: 12),
               picker,

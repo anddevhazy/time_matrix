@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../global/components/drag_handle.dart';
 import '../../../global/components/empty_state.dart';
 import '../../../global/constants/app_colors.dart';
 import '../../../global/constants/app_text_styles.dart';
@@ -18,6 +19,7 @@ class QuadrantPanel extends StatelessWidget {
     required this.onTaskTap,
     required this.onToggleCompletion,
     required this.onDeleteTask,
+    required this.onReorder,
     this.shrinkWrap = false,
   });
 
@@ -28,6 +30,7 @@ class QuadrantPanel extends StatelessWidget {
   final ValueChanged<TaskEntity> onTaskTap;
   final ValueChanged<String> onToggleCompletion;
   final ValueChanged<String> onDeleteTask;
+  final ReorderCallback onReorder;
 
   /// When true, sizes to its content instead of filling available height —
   /// for use inside a scrollable list rather than a fixed-height grid cell.
@@ -67,18 +70,25 @@ class QuadrantPanel extends StatelessWidget {
             icon: Icons.inbox_outlined,
             message: isHovering ? 'Drop to move here' : 'No tasks here yet',
           )
-        : ListView.builder(
+        : ReorderableListView.builder(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
             shrinkWrap: shrinkWrap,
             physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+            // Reordering starts only from the handle; a drag anywhere else on
+            // the card still moves the task to another quadrant.
+            buildDefaultDragHandles: false,
+            proxyDecorator: reorderProxyDecorator,
+            onReorder: onReorder,
             itemCount: tasks.length,
             itemBuilder: (context, index) {
               final task = tasks[index];
               return TaskCard(
+                key: ValueKey(task.id),
                 task: task,
                 onTap: () => onTaskTap(task),
                 onToggleCompletion: () => onToggleCompletion(task.id),
                 onDelete: () => onDeleteTask(task.id),
+                dragHandle: DragHandle(index: index),
               );
             },
           );

@@ -12,6 +12,7 @@ import '../../../task_matrix/domain/usecases/add_task_usecase.dart';
 import '../../domain/entities/dump_entry.dart';
 import '../../domain/usecases/add_dump_entry_usecase.dart';
 import '../../domain/usecases/delete_dump_entries_usecase.dart';
+import '../../domain/usecases/reorder_dump_entries_usecase.dart';
 import '../../domain/usecases/watch_dump_entries_usecase.dart';
 
 part 'dump_state.dart';
@@ -23,16 +24,19 @@ class DumpCubit extends Cubit<DumpState> {
     required WatchDumpEntriesUsecase watchDumpEntriesUsecase,
     required AddDumpEntryUsecase addDumpEntryUsecase,
     required DeleteDumpEntriesUsecase deleteDumpEntriesUsecase,
+    required ReorderDumpEntriesUsecase reorderDumpEntriesUsecase,
     required AddTaskUsecase addTaskUsecase,
   })  : _watchDumpEntriesUsecase = watchDumpEntriesUsecase,
         _addDumpEntryUsecase = addDumpEntryUsecase,
         _deleteDumpEntriesUsecase = deleteDumpEntriesUsecase,
+        _reorderDumpEntriesUsecase = reorderDumpEntriesUsecase,
         _addTaskUsecase = addTaskUsecase,
         super(const DumpInitial());
 
   final WatchDumpEntriesUsecase _watchDumpEntriesUsecase;
   final AddDumpEntryUsecase _addDumpEntryUsecase;
   final DeleteDumpEntriesUsecase _deleteDumpEntriesUsecase;
+  final ReorderDumpEntriesUsecase _reorderDumpEntriesUsecase;
   final AddTaskUsecase _addTaskUsecase;
 
   StreamSubscription<Either<Failure, List<DumpEntry>>>? _subscription;
@@ -91,6 +95,29 @@ class DumpCubit extends Cubit<DumpState> {
     final assignments = Map<String, Quadrant>.from(current.assignments)..remove(entryId);
     emit(current.copyWith(assignments: assignments, clearError: true));
     final result = await _deleteDumpEntriesUsecase([entryId]);
+    result.fold(_emitError, (_) {});
+  }
+
+  /// Handles a drop from [ReorderableListView]. The new order shows
+  /// immediately and is then saved.
+  Future<void> reorderEntry(int oldIndex, int newIndex) async {
+    final current = state;
+    if (current is! DumpLoaded || current.isSaving) return;
+    final ordered = current.orderedEntries;
+    if (oldIndex < 0 || oldIndex >= ordered.length) return;
+    // The index is reported as if the dragged entry were still in the list.
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (newIndex == oldIndex) return;
+
+    ordered.insert(newIndex, ordered.removeAt(oldIndex));
+    emit(
+      current.copyWith(
+        entries: [for (var i = 0; i < ordered.length; i++) ordered[i].copyWith(sortOrder: i)],
+        clearError: true,
+      ),
+    );
+
+    final result = await _reorderDumpEntriesUsecase([for (final e in ordered) e.id]);
     result.fold(_emitError, (_) {});
   }
 

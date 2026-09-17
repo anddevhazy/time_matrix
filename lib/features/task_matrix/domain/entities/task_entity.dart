@@ -12,6 +12,7 @@ class TaskEntity extends Equatable {
     this.tags = const [],
     this.isCompleted = false,
     required this.createdAt,
+    this.sortOrder,
   });
 
   final String id;
@@ -22,6 +23,15 @@ class TaskEntity extends Equatable {
   final List<String> tags;
   final bool isCompleted;
   final DateTime createdAt;
+
+  /// Manual position within the task's quadrant, set by drag-to-reorder.
+  /// Null until the task is first reordered or moved.
+  final int? sortOrder;
+
+  /// Tasks that have never been positioned fall back to their creation time,
+  /// which is always larger than a reordered index — so new tasks land at the
+  /// bottom of their quadrant without having to look up the current maximum.
+  int get effectiveSortOrder => sortOrder ?? createdAt.millisecondsSinceEpoch;
 
   bool get isOverdue =>
       dueDate != null && !isCompleted && dueDate!.isBefore(DateTime.now());
@@ -36,6 +46,7 @@ class TaskEntity extends Equatable {
     List<String>? tags,
     bool? isCompleted,
     DateTime? createdAt,
+    int? sortOrder,
   }) {
     return TaskEntity(
       id: id ?? this.id,
@@ -46,6 +57,7 @@ class TaskEntity extends Equatable {
       tags: tags ?? this.tags,
       isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt ?? this.createdAt,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
@@ -59,5 +71,6 @@ class TaskEntity extends Equatable {
         tags,
         isCompleted,
         createdAt,
+        sortOrder,
       ];
 }

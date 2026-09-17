@@ -32,9 +32,14 @@ class DumpLoaded extends DumpState {
   final bool isSaving;
   final String? errorMessage;
 
-  /// Oldest first, so the list reads in the order things were dumped.
+  /// In manual order; entries never reordered read oldest first, in the order
+  /// things were dumped.
   List<DumpEntry> get orderedEntries {
-    final ordered = [...entries]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final ordered = [...entries]
+      ..sort((a, b) {
+        final byOrder = a.effectiveSortOrder.compareTo(b.effectiveSortOrder);
+        return byOrder != 0 ? byOrder : a.createdAt.compareTo(b.createdAt);
+      });
     return ordered;
   }
 

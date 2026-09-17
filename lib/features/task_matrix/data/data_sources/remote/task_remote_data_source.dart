@@ -8,4 +8,6 @@ abstract class TaskRemoteDataSource {
   Future<void> updateTask(TaskModel task);
 
   Future<void> deleteTask(String id);
+
+  Future<void> reorderTasks(List<String> orderedIds);
 }

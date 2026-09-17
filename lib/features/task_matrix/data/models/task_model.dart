@@ -11,6 +11,7 @@ class TaskModel extends TaskEntity {
     super.tags,
     super.isCompleted,
     required super.createdAt,
+    super.sortOrder,
   });
 
   factory TaskModel.fromEntity(TaskEntity entity) => TaskModel(
@@ -22,6 +23,7 @@ class TaskModel extends TaskEntity {
         tags: entity.tags,
         isCompleted: entity.isCompleted,
         createdAt: entity.createdAt,
+        sortOrder: entity.sortOrder,
       );
 
   factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
@@ -33,6 +35,7 @@ class TaskModel extends TaskEntity {
         tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
         isCompleted: json['isCompleted'] as bool? ?? false,
         createdAt: DateTime.parse(json['createdAt'] as String),
+        sortOrder: (json['sortOrder'] as num?)?.toInt(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -44,5 +47,6 @@ class TaskModel extends TaskEntity {
         'tags': tags,
         'isCompleted': isCompleted,
         'createdAt': createdAt.toIso8601String(),
+        'sortOrder': sortOrder,
       };
 }

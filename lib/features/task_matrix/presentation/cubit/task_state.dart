@@ -33,16 +33,17 @@ class TaskLoaded extends TaskState {
     }).toList();
   }
 
-  List<TaskEntity> tasksFor(Quadrant quadrant) {
-    final filtered = visibleTasks.where((t) => t.quadrant == quadrant).toList();
+  /// Tasks in [quadrant] that match the search, in their manual order.
+  List<TaskEntity> tasksFor(Quadrant quadrant) => _inOrder(visibleTasks, quadrant);
+
+  /// Every task in [quadrant] in its manual order, ignoring the search query.
+  List<TaskEntity> allTasksFor(Quadrant quadrant) => _inOrder(tasks, quadrant);
+
+  static List<TaskEntity> _inOrder(List<TaskEntity> source, Quadrant quadrant) {
+    final filtered = source.where((t) => t.quadrant == quadrant).toList();
     filtered.sort((a, b) {
-      if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
-      final aDue = a.dueDate;
-      final bDue = b.dueDate;
-      if (aDue == null && bDue == null) return b.createdAt.compareTo(a.createdAt);
-      if (aDue == null) return 1;
-      if (bDue == null) return -1;
-      return aDue.compareTo(bDue);
+      final byOrder = a.effectiveSortOrder.compareTo(b.effectiveSortOrder);
+      return byOrder != 0 ? byOrder : a.createdAt.compareTo(b.createdAt);
     });
     return filtered;
   }

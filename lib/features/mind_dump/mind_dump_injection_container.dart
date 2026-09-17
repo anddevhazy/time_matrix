@@ -5,6 +5,7 @@ import 'data/repository/dump_repository_impl.dart';
 import 'domain/repositories/dump_repository.dart';
 import 'domain/usecases/add_dump_entry_usecase.dart';
 import 'domain/usecases/delete_dump_entries_usecase.dart';
+import 'domain/usecases/reorder_dump_entries_usecase.dart';
 import 'domain/usecases/watch_dump_entries_usecase.dart';
 import 'presentation/cubit/dump_cubit.dart';
 
@@ -14,6 +15,7 @@ Future<void> mindDumpInjectionContainer() async {
       watchDumpEntriesUsecase: sl(),
       addDumpEntryUsecase: sl(),
       deleteDumpEntriesUsecase: sl(),
+      reorderDumpEntriesUsecase: sl(),
       addTaskUsecase: sl(),
     ),
   );
@@ -21,6 +23,7 @@ Future<void> mindDumpInjectionContainer() async {
   sl.registerLazySingleton(() => WatchDumpEntriesUsecase(sl()));
   sl.registerLazySingleton(() => AddDumpEntryUsecase(sl()));
   sl.registerLazySingleton(() => DeleteDumpEntriesUsecase(sl()));
+  sl.registerLazySingleton(() => ReorderDumpEntriesUsecase(sl()));
 
   sl.registerLazySingleton<DumpRepository>(() => DumpRepositoryImpl(sl()));
 
