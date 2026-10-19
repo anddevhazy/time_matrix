@@ -34,16 +34,34 @@ class TaskCard extends StatelessWidget {
       dragHandle: dragHandle,
     );
 
+    final feedback = Material(
+      color: Colors.transparent,
+      child: SizedBox(width: 260, child: Opacity(opacity: 0.9, child: card)),
+    );
+    final childWhenDragging = Opacity(opacity: 0.3, child: card);
+
+    // On touch platforms an immediate drag would win the gesture arena over
+    // the list's vertical scroll, so moving a task needs a long press there.
+    if (_isTouchPlatform(Theme.of(context).platform)) {
+      return LongPressDraggable<String>(
+        data: task.id,
+        feedback: feedback,
+        childWhenDragging: childWhenDragging,
+        child: card,
+      );
+    }
     return Draggable<String>(
       data: task.id,
-      feedback: Material(
-        color: Colors.transparent,
-        child: SizedBox(width: 260, child: Opacity(opacity: 0.9, child: card)),
-      ),
-      childWhenDragging: Opacity(opacity: 0.3, child: card),
+      feedback: feedback,
+      childWhenDragging: childWhenDragging,
       child: card,
     );
   }
+
+  static bool _isTouchPlatform(TargetPlatform platform) => switch (platform) {
+        TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.fuchsia => true,
+        TargetPlatform.linux || TargetPlatform.macOS || TargetPlatform.windows => false,
+      };
 }
 
 class _CardBody extends StatelessWidget {
